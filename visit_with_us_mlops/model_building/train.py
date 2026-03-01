@@ -43,6 +43,9 @@ with mlflow.start_run():
     X_train = train_df.drop("ProdTaken", axis=1)
     y_train = train_df["ProdTaken"]
 
+    scale_pos_weight = (y_train == 0).sum() / (y_train == 1).sum()
+    print("Scale Pos Weight:", scale_pos_weight)
+
     X_test = test_df.drop("ProdTaken", axis=1)
     y_test = test_df["ProdTaken"]
 
@@ -50,7 +53,8 @@ with mlflow.start_run():
     xgb = XGBClassifier(
         eval_metric="logloss",
         random_state=42,
-        tree_method="hist"
+        tree_method="hist",
+        scale_pos_weight=scale_pos_weight
     )
 
     param_grid = {

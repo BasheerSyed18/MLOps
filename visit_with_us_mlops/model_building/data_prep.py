@@ -19,18 +19,11 @@ raw_url = f"https://huggingface.co/datasets/{DATASET_REPO}/resolve/main/raw.csv"
 df = pd.read_csv(raw_url)
 
 print("Dataset loaded successfully.")
+print("Initial shape:", df.shape)
 
 # ---------------- REMOVE IDENTIFIERS ----------------
 df = df.drop(columns=["CustomerID", "Unnamed: 0"], errors="ignore")
-
 print("Identifier columns removed.")
-
-# ---------------- HANDLE MISSING VALUES ----------------
-
-# Fill numeric columns with median
-numeric_cols = df.select_dtypes(include=["int64", "float64"]).columns
-for col in numeric_cols:
-    df[col] = df[col].fillna(df[col].median())
 
 # ---------------- CLEAN GENDER COLUMN ----------------
 if "Gender" in df.columns:
@@ -38,26 +31,41 @@ if "Gender" in df.columns:
         "Fe Male": "Female"
     })
 
-# Fill categorical columns with mode
-categorical_cols = df.select_dtypes(include=["object"]).columns
-for col in categorical_cols:
-    df[col] = df[col].fillna(df[col].mode()[0])
+# ---------------- REMOVE NA ROWS ----------------
+before_drop = df.shape[0]
+df = df.dropna()
+after_drop = df.shape[0]
 
-print("Missing values handled using median and mode.")
+print(f"Rows before dropping NA: {before_drop}")
+print(f"Rows after dropping NA: {after_drop}")
+print(f"Rows removed: {before_drop - after_drop}")
 
 # ---------------- ENCODE CATEGORICAL VARIABLES ----------------
+categorical_cols = df.select_dtypes(include=["object"]).columns
 label_encoders = {}
+
+print("\n🔎 Label Encoding Mapping:")
 
 for col in categorical_cols:
     le = LabelEncoder()
     df[col] = le.fit_transform(df[col])
     label_encoders[col] = le
+    
+    mapping = dict(zip(le.classes_, le.transform(le.classes_)))
+    print(f"\nColumn: {col}")
+    print(mapping)
 
-print("Categorical encoding completed.")
+print("\nCategorical encoding completed.")
 
 # ---------------- SPLIT DATA ----------------
 X = df.drop("ProdTaken", axis=1)
 y = df["ProdTaken"]
+
+print("Class Distribution (Counts):")
+print(y.value_counts())
+
+print("\nClass Distribution (Percentage):")
+print(y.value_counts(normalize=True))
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
@@ -75,7 +83,7 @@ test_path = "visit_with_us_mlops/data/test.csv"
 train_df.to_csv(train_path, index=False)
 test_df.to_csv(test_path, index=False)
 
-print("Train and test datasets saved locally.")
+print("\nTrain and test datasets saved locally.")
 
 # ---------------- UPLOAD TO HF ----------------
 api.upload_file(
