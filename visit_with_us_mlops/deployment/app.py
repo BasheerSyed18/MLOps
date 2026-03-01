@@ -21,21 +21,46 @@ model = load_model()
 st.title("Wellness Tourism Package Prediction")
 st.write("Provide customer details to predict purchase likelihood.")
 
-# ---------------- MANUAL ENCODING MAPS ----------------
-contact_map = {"Company Invited": 0, "Self Inquiry": 1}
-gender_map = {"Male": 0, "Female": 1}
-marital_map = {"Single": 0, "Married": 1, "Divorced": 2}
-occupation_map = {
-    "Salaried": 0,
-    "Freelancer": 1,
-    "Small Business": 2,
-    "Large Business": 3
+# ---------------- EXACT CATEGORICAL MAPS ----------------
+contact_map = {
+    "Company Invited": 0,
+    "Self Enquiry": 1
 }
+
+occupation_map = {
+    "Free Lancer": 0,
+    "Large Business": 1,
+    "Salaried": 2,
+    "Small Business": 3
+}
+
+gender_map = {
+    "Fe Male": 0,
+    "Female": 1,
+    "Male": 2
+}
+
+marital_map = {
+    "Divorced": 0,
+    "Married": 1,
+    "Single": 2,
+    "Unmarried": 3
+}
+
 product_map = {
     "Basic": 0,
-    "Standard": 1,
-    "Deluxe": 2,
-    "Super Deluxe": 3
+    "Deluxe": 1,
+    "King": 2,
+    "Standard": 3,
+    "Super Deluxe": 4
+}
+
+designation_map = {
+    "AVP": 0,
+    "Executive": 1,
+    "Manager": 2,
+    "Senior Manager": 3,
+    "VP": 4
 }
 
 # ---------------- INPUT FORM ----------------
@@ -48,12 +73,14 @@ with st.form("prediction_form"):
     NumberOfChildrenVisiting = st.number_input("Number of Children Visiting", 0, 5, 0)
     DurationOfPitch = st.number_input("Duration of Pitch (minutes)", 1, 120, 30)
     PitchSatisfactionScore = st.slider("Pitch Satisfaction Score", 1, 5, 3)
+    NumberOfFollowups = st.number_input("Number of Followups After Pitch", 0, 10, 1)
 
     TypeofContact = st.selectbox("Type of Contact", list(contact_map.keys()))
+    Occupation = st.selectbox("Occupation", list(occupation_map.keys()))
     Gender = st.selectbox("Gender", list(gender_map.keys()))
     MaritalStatus = st.selectbox("Marital Status", list(marital_map.keys()))
-    Occupation = st.selectbox("Occupation", list(occupation_map.keys()))
     ProductPitched = st.selectbox("Product Pitched", list(product_map.keys()))
+    Designation = st.selectbox("Designation", list(designation_map.keys()))
 
     Passport = st.selectbox("Passport", [0, 1])
     OwnCar = st.selectbox("Own Car", [0, 1])
@@ -67,22 +94,27 @@ if submit:
 
     input_data = pd.DataFrame([{
         "Age": Age,
-        "MonthlyIncome": MonthlyIncome,
-        "NumberOfTrips": NumberOfTrips,
-        "NumberOfPersonVisiting": NumberOfPersonVisiting,
-        "NumberOfChildrenVisiting": NumberOfChildrenVisiting,
-        "DurationOfPitch": DurationOfPitch,
-        "PitchSatisfactionScore": PitchSatisfactionScore,
         "TypeofContact": contact_map[TypeofContact],
-        "Gender": gender_map[Gender],
-        "MaritalStatus": marital_map[MaritalStatus],
-        "Occupation": occupation_map[Occupation],
-        "ProductPitched": product_map[ProductPitched],
-        "Passport": Passport,
-        "OwnCar": OwnCar,
         "CityTier": CityTier,
-        "PreferredPropertyStar": PreferredPropertyStar
+        "DurationOfPitch": DurationOfPitch,
+        "Occupation": occupation_map[Occupation],
+        "Gender": gender_map[Gender],
+        "NumberOfPersonVisiting": NumberOfPersonVisiting,
+        "NumberOfFollowups": NumberOfFollowups,
+        "ProductPitched": product_map[ProductPitched],
+        "PreferredPropertyStar": PreferredPropertyStar,
+        "MaritalStatus": marital_map[MaritalStatus],
+        "NumberOfTrips": NumberOfTrips,
+        "Passport": Passport,
+        "PitchSatisfactionScore": PitchSatisfactionScore,
+        "OwnCar": OwnCar,
+        "NumberOfChildrenVisiting": NumberOfChildrenVisiting,
+        "Designation": designation_map[Designation],
+        "MonthlyIncome": MonthlyIncome
     }])
+
+    # 🔥 Force exact feature order
+    input_data = input_data[model.feature_names_in_]
 
     prediction = model.predict(input_data)[0]
     probability = model.predict_proba(input_data)[0][1]
