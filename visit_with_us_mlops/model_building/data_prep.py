@@ -3,14 +3,16 @@ import os
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from huggingface_hub import HfApi, login
+from huggingface_hub import HfApi
 
 # ---------------- CONFIG ----------------
 HF_TOKEN = os.getenv("HF_TOKEN")
 DATASET_REPO = "Bash18/tourism-package-prediction"
 
-# ---------------- LOGIN ----------------
-login(token=HF_TOKEN)
+if HF_TOKEN is None:
+    raise ValueError("HF_TOKEN is not set.")
+
+api = HfApi(token=HF_TOKEN)
 
 # ---------------- LOAD DATA ----------------
 raw_url = f"https://huggingface.co/datasets/{DATASET_REPO}/resolve/main/raw.csv"
@@ -18,26 +20,29 @@ df = pd.read_csv(raw_url)
 
 print("Dataset loaded successfully.")
 
-# ---------------- REMOVE IDENTIFIER ----------------
-if "CustomerID" in df.columns:
-    df.drop(columns=["CustomerID"], inplace=True)
+# ---------------- REMOVE IDENTIFIERS ----------------
+df = df.drop(columns=["CustomerID", "Unnamed: 0"], errors="ignore")
+
+print("Identifier columns removed.")
 
 # ---------------- HANDLE MISSING VALUES ----------------
 
 # Fill numeric columns with median
-for col in df.select_dtypes(include=["int64", "float64"]).columns:
-    df[col].fillna(df[col].median(), inplace=True)
+numeric_cols = df.select_dtypes(include=["int64", "float64"]).columns
+for col in numeric_cols:
+    df[col] = df[col].fillna(df[col].median())
 
 # Fill categorical columns with mode
-for col in df.select_dtypes(include=["object"]).columns:
-    df[col].fillna(df[col].mode()[0], inplace=True)
+categorical_cols = df.select_dtypes(include=["object"]).columns
+for col in categorical_cols:
+    df[col] = df[col].fillna(df[col].mode()[0])
 
 print("Missing values handled using median and mode.")
 
 # ---------------- ENCODE CATEGORICAL VARIABLES ----------------
 label_encoders = {}
 
-for col in df.select_dtypes(include=["object"]).columns:
+for col in categorical_cols:
     le = LabelEncoder()
     df[col] = le.fit_transform(df[col])
     label_encoders[col] = le
@@ -67,8 +72,6 @@ test_df.to_csv(test_path, index=False)
 print("Train and test datasets saved locally.")
 
 # ---------------- UPLOAD TO HF ----------------
-api = HfApi()
-
 api.upload_file(
     path_or_fileobj=train_path,
     path_in_repo="train.csv",
