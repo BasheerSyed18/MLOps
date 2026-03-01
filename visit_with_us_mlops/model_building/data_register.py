@@ -7,11 +7,8 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 DATASET_REPO = "Bash18/tourism-package-prediction"
 RAW_FILE_PATH = "visit_with_us_mlops/data/tourism.csv"
 
-# ---------------- LOGIN ----------------
-login(token=HF_TOKEN)
-
 # ---------------- CREATE DATASET REPO ----------------
-api = HfApi()
+api = HfApi(token=os.getenv("HF_TOKEN"))
 
 api.create_repo(
     repo_id=DATASET_REPO,
