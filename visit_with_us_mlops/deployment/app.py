@@ -115,9 +115,20 @@ if submit:
     # 🔥 Force exact feature order
     input_data = input_data[model.feature_names_in_]
 
+    # ---------------- DEBUG LOGGING ----------------
+    st.subheader("Debug Information")
+
+    st.write("Model expects features in this order:")
+    st.write(list(model.feature_names_in_))
+
+    st.write("Encoded Input DataFrame sent to model:")
+    st.dataframe(input_data)
+
     prediction = model.predict(input_data)[0]
     probability = model.predict_proba(input_data)[0][1]
 
+    st.write("Raw Probability:", probability)
+    
     if prediction == 1:
         st.success(f"Customer is likely to purchase the package. (Probability: {probability:.2f})")
     else:
