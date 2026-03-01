@@ -35,9 +35,8 @@ occupation_map = {
 }
 
 gender_map = {
-    "Fe Male": 0,
-    "Female": 1,
-    "Male": 2
+    "Female": 0,
+    "Male": 1
 }
 
 marital_map = {

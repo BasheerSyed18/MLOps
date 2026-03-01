@@ -32,6 +32,12 @@ numeric_cols = df.select_dtypes(include=["int64", "float64"]).columns
 for col in numeric_cols:
     df[col] = df[col].fillna(df[col].median())
 
+# ---------------- CLEAN GENDER COLUMN ----------------
+if "Gender" in df.columns:
+    df["Gender"] = df["Gender"].replace({
+        "Fe Male": "Female"
+    })
+
 # Fill categorical columns with mode
 categorical_cols = df.select_dtypes(include=["object"]).columns
 for col in categorical_cols:
